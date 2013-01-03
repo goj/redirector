@@ -1,0 +1,9 @@
+[Unit]
+Description=Web server doing http redirections based on /etc/hosts file
+
+[Service]
+ExecStart=/usr/bin/redirector
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
