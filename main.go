@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 )
 
 type redirect struct {
-	from, to string
+	from, shortTo, longTo string
 }
 
-func findRedirects(filename string) (result []redirect, err error) {
+func findRedirects(filename string) (result []*redirect, err error) {
 	var (
 		f        *os.File
 		re       *regexp.Regexp
@@ -29,7 +30,7 @@ func findRedirects(filename string) (result []redirect, err error) {
 	if re, err = regexp.Compile("^::1 (.*) #redirects-to (.*)$"); err != nil {
 		return
 	}
-	result = []redirect{}
+	result = []*redirect{}
 	for {
 		if line, isPrefix, err = r.ReadLine(); err == io.EOF {
 			break
@@ -39,7 +40,16 @@ func findRedirects(filename string) (result []redirect, err error) {
 			break
 		}
 		if match := re.FindSubmatch(line); match != nil {
-			result = append(result, redirect{from: string(match[1]), to: string(match[2])})
+			var shortTo, longTo string
+			allRedirects := strings.Split(string(match[2]), " ")
+			shortTo = allRedirects[0]
+			if len(allRedirects) > 1 {
+				longTo = allRedirects[1]
+			}
+			result = append(result, &redirect{
+				from:    string(match[1]),
+				shortTo: shortTo,
+				longTo:  longTo})
 		}
 	}
 	if err == io.EOF {
@@ -48,13 +58,24 @@ func findRedirects(filename string) (result []redirect, err error) {
 	return
 }
 
+func addRedirect(r *redirect) {
+	http.HandleFunc(r.from+"/", func(w http.ResponseWriter, req *http.Request) {
+		path := req.URL.Path[1:]
+		if r.longTo != "" && len(req.URL.Path) > 1 {
+			http.Redirect(w, req, r.longTo+path, http.StatusSeeOther)
+		} else {
+			http.Redirect(w, req, r.shortTo, http.StatusSeeOther)
+		}
+	})
+}
+
 func main() {
 	redirects, err := findRedirects("/etc/hosts")
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, r := range redirects {
-		http.Handle(r.from+"/", http.RedirectHandler(r.to, http.StatusSeeOther))
+		addRedirect(r)
 	}
 	if err = http.ListenAndServe(":80", nil); err != nil {
 		log.Fatal(err)

@@ -1,8 +1,8 @@
-.PHONY: all install clean
+.PHONY: all install reload clean
 
 all: redirector
 
-redirector:
+redirector: main.go
 	go build github.com/goj/redirector
 
 install: redirector
