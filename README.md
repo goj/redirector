@@ -41,3 +41,37 @@ sudo systemctl start redirector.service
 ```
 sudo systemctl enable redirector.service
 ```
+
+Usage (NixOS)
+-------------
+
+Add a flake input and a module in `/etc/nixos/flake.nix`:
+
+```nix
+{
+  description = "NixOS configuration";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    redirector.url = "github:goj/redirector?dir=nix";
+  };
+
+  outputs = { self, nixpkgs, redirector }: {
+    nixosConfigurations.framework = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./configuration.nix
+        redirector.nixosModules.redirector
+      ];
+    };
+  };
+}
+```
+
+Use them in `configuration.nix`:
+```nix
+  systemd.services.redirector.enable = true;
+  networking.extraHosts = redirectorUtils.extraHostsRedirections [
+      {from = "w"; to = "https://drive.google.com/";}
+    ];
+```
