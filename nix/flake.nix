@@ -49,9 +49,7 @@ rec {
       };
 
       devShells.${system}.default = pkgs.mkShell {
-        packages = [
-          pkgs.go
-        ];
+        packages = with pkgs; [ go gopls ];
       };
 
     };
