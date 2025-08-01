@@ -62,8 +62,10 @@ func addRedirect(r *redirect) {
 	http.HandleFunc(r.from+"/", func(w http.ResponseWriter, req *http.Request) {
 		path := req.URL.Path[1:]
 		if r.longTo != "" && len(req.URL.Path) > 1 {
+			log.Printf("Long redirecting %s to %s", req.Host, r.longTo)
 			http.Redirect(w, req, r.longTo+path, http.StatusSeeOther)
 		} else {
+			log.Printf("Short redirecting %s to %s", req.Host, r.shortTo)
 			http.Redirect(w, req, r.shortTo, http.StatusSeeOther)
 		}
 	})
@@ -74,6 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Loaded %d redirects\n", len(redirects))
 	for _, r := range redirects {
 		addRedirect(r)
 	}
