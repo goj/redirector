@@ -70,8 +70,13 @@ Add a flake input and a module in `/etc/nixos/flake.nix`:
 
 Use them in `configuration.nix`:
 ```nix
+{ pkgs, redirectorUtils, ... }:
+{
+  # ...
+
   systemd.services.redirector.enable = true;
   networking.extraHosts = redirectorUtils.extraHostsRedirections [
       {from = "w"; to = "https://drive.google.com/";}
     ];
+}
 ```
